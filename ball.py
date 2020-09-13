@@ -1,65 +1,50 @@
-import pygame, sys, math
+import pygame
 from pygame.math import Vector2
-win = pygame.display.set_mode((800, 400))
 
-class pilka(object):
-    def __init__(self, x, y, radius, color):
-        self.clock = pygame.time.Clock()
-        self.delta = 0
-        self.tickrate = 120
-        self.x = x
-        self.y = y
+black = (0, 0, 0)
+
+class pilka:
+    def __init__(self, coord, radius, color):
+        self.ballPos = Vector2(coord)
         self.radius = radius
         self.color = color
+        self.velocity = Vector2(0, 0)
+        self.gravAcceleration = 0.1
+        self.isMoving = False
 
     def Draw(self, win):
-        pygame.draw.circle(win, (0, 0, 0), (int(self.x), int(self.y)), self.radius)
-        pygame.draw.circle(win, self.color, (int(self.x), int(self.y)), self.radius-1)
+        pygame.draw.circle(win, black, (int(self.ballPos.x), int(self.ballPos.y)), self.radius)
+        pygame.draw.circle(win, self.color, (int(self.ballPos.x), int(self.ballPos.y)), self.radius-1)
 
-def redrawwindow():
-    win.fill((0, 150, 150))
-    golfball.Draw(win)
-    pygame.draw.line(win, (0, 0, 0), line[0], line[1])
-    pygame.display.update()
+    def updatePosition(self):
+        self.ballPos.x += self.velocity.x
+        self.ballPos.y += self.velocity.y
+        self.velocity.y += self.gravAcceleration
 
-golfball = pilka(400, 394, 6, (255, 255, 255))
-bound = False
-shoot = False
-gravacc = 0.1
-vel = Vector2(0, 0)
+    def hitsWindowVerticalAxes(self, winResolution):
+        return self.ballPos.y > winResolution[1] - self.radius or self.ballPos.y < self.radius
 
-while True:
-    golfball.delta += golfball.clock.tick()/ 1000.0
-    pos = pygame.mouse.get_pos()
-    line = [(golfball.x, golfball.y), pos]
-    redrawwindow()
-    while golfball.delta > 1/golfball.tickrate:
-        golfball.delta -= 1/golfball.tickrate
-        if shoot:
-            golfball.x += vel.x
-            golfball.y += vel.y
-            vel.y += gravacc
-            if golfball.y > 394 or golfball.y < 6:
-                vel.x /= 1.2
-                vel.y /= -1.3
-                vel.y += gravacc
-                golfball.x += vel.x
-                golfball.y += vel.y
-                if abs(vel.x) < 0.1 and abs(vel.y) < 0.1:
-                    golfball.y = 394
-                    shoot = False
-            if golfball.x < 6 or golfball.x > 794:
-                vel.x /= -1.2
-                golfball.x += vel.x
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit(0)
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if shoot == False:
-                    shoot= True
-                posss = pygame.mouse.get_pos()
-                poss = Vector2(posss[0] - golfball.x, posss[1] - golfball.y)
-                power = math.sqrt((golfball.x-posss[0])**2+(golfball.y-posss[1])**2)/4
-                angle = poss.angle_to(Vector2(1, 0))
-                vel.x = round(math.cos(math.radians(angle)) * power) / 8
-                vel.y = -round(math.sin(math.radians(angle)) * power) / 8
+    def hitsWindowLateralAxes(self, winResolution):
+        return self.ballPos.x < self.radius or self.ballPos.x > winResolution[0] - self.radius
+
+    def verticalEnergyDispersion(self):
+        self.velocity.x /= 1.2
+        self.velocity.y /= -1.3
+        self.updatePosition()
+
+    def horizontalEnergyDispersion(self):
+        self.velocity.x /= -1.2
+        self.updatePosition()
+
+    def updateSpeedVector(self, speedVector):
+        self.velocity.x = speedVector.x
+        self.velocity.y = speedVector.y
+
+    def hasNoEnergy(self):
+        return abs(self.velocity.x) < 0.1 and abs(self.velocity.y) < 0.1
+
+    def mustStop(self):
+        self.ballPos.y = 394
+        self.isMoving = False
+
+

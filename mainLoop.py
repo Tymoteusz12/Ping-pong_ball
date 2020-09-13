@@ -24,11 +24,11 @@ while True:
             if golfball.hitsWindowVerticalAxes(winProps.resolution):
                 golfball.verticalEnergyDispersion()
 
-                if golfball.hasNoEnergy():
-                    golfball.mustStop()
-
             if golfball.hitsWindowLateralAxes(winProps.resolution):
                 golfball.horizontalEnergyDispersion()
+
+            if golfball.hasNoEnergy():
+                golfball.mustStop()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
